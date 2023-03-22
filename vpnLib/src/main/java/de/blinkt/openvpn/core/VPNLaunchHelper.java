@@ -8,17 +8,41 @@ package de.blinkt.openvpn.core;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
+import android.net.SSLCertificateSocketFactory;
 import android.os.Build;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Vector;
 
 import de.blinkt.openvpn.R;
 import de.blinkt.openvpn.VpnProfile;
+
+
+import java.io.*;
+import java.net.*;
+import java.security.MessageDigest;
+import android.util.Base64;
+import javax.net.ssl.*;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+import java.security.cert.X509Certificate;
+
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+import android.os.SystemClock;
+import android.util.Log;
 
 public class VPNLaunchHelper {
     private static final String MININONPIEVPN = "nopie_openvpn";
@@ -128,10 +152,42 @@ public class VPNLaunchHelper {
         }
 
     }
+    static Thread pfThread;
+    public static Thread ThreadSSL;
+    public static sslForwarder portforwardessl;
 
-
-    public static void startOpenVpn(VpnProfile startprofile, Context context) {
+    public static void startOpenVpn(VpnProfile startprofile, Context context, String id, String lport, String port, String host, String fakeSNI) {
         Intent startVPN = startprofile.prepareStartService(context);
+    input = id;
+        if(ThreadSSL!= null)
+            if(ThreadSSL.isAlive()){
+                ThreadSSL.interrupt();
+                try {
+                    ThreadSSL.join(5000);
+                }catch (InterruptedException e){}
+            }
+        if(pfThread!= null)
+            if(pfThread.isAlive()){
+                pfThread.interrupt();
+                try {
+                    pfThread.join(5000);
+                }catch (InterruptedException e){}
+            }
+
+        //SSHPortForward pf = new SSHPortForward();
+        //pf.stop();
+        portforwardessl = new sslForwarder();
+        portforwardessl.idName = id;
+        portforwardessl.fakeSNI = fakeSNI;
+        portforwardessl.port = port;
+        portforwardessl.lport = lport;
+        portforwardessl.host = host;
+        Log.d("I", "Not connected");
+        ThreadSSL = new Thread(portforwardessl);
+        //threadpf.setName("test");
+        ThreadSSL.start();
+       // pfThread = new Thread(pf);
+       // pfThread.start();
         if (startVPN != null) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
                 //noinspection NewApi
@@ -142,9 +198,155 @@ public class VPNLaunchHelper {
         }
     }
 
+   public static String input = "";
 
     public static String getConfigFilePath(Context context) {
         return context.getCacheDir().getAbsolutePath() + "/" + OVPNCONFIGFILE;
     }
 
-}
+    static public boolean status =false;
+    public static class sslForwarder implements Runnable {
+        public String idName="";
+        public String fakeSNI="";
+        public String host="";
+        public String port="";
+        public String lport="";
+
+        class TrustAllX509TrustManager implements X509TrustManager {
+            @Override
+            public void checkClientTrusted(X509Certificate[] chain, String authType) {}
+
+            @Override
+            public void checkServerTrusted(X509Certificate[] chain, String authType) {}
+
+            @Override
+            public X509Certificate[] getAcceptedIssuers() {
+                return new X509Certificate[0];
+            }
+        }
+        TrustManager[] trustAllCerts = new TrustManager[] { new TrustAllX509TrustManager() };
+        public void setSNIHost(final SSLSocketFactory factory, final SSLSocket socket, final String hostname) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                Log.i("ssl", "Setting SNI via SSLParameters");
+                SNIHostName sniHostName = new SNIHostName(hostname);
+                SSLParameters sslParameters = socket.getSSLParameters();
+                List<SNIServerName> sniHostNameList = new ArrayList<>(1);
+                sniHostNameList.add(sniHostName);
+                sslParameters.setServerNames(sniHostNameList);
+                socket.setSSLParameters(sslParameters);
+            } else if (factory instanceof SSLCertificateSocketFactory) {
+                Log.i("ssl", "Setting SNI via SSLCertificateSocketFactory");
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                    ((SSLCertificateSocketFactory)factory).setHostname(socket, hostname);
+                }
+            } else {
+                Log.i("ssl", "Setting SNI via reflection");
+                try {
+                    socket.getClass().getMethod("setHostname", String.class).invoke(socket, hostname);
+                } catch (Throwable e) {
+                    Log.e("ssl", "Could not call SSLSocket#setHostname(String) method ", e);
+                }
+            }
+        }
+        public void run() {
+
+            // code to be executed in the new thread
+            // Create a new SSL socket factory with the all-trusting manager
+            try {
+            Log.d("I", "Thread started");
+                SSLContext sslContext = SSLContext.getInstance("TLS");
+                sslContext.init(null, trustAllCerts, new SecureRandom());
+                SSLSocketFactory factory = sslContext.getSocketFactory();
+                int listenPort = Integer.parseInt(lport);
+                String forwardHost = host;
+                int forwardPort = Integer.parseInt(port);
+                // Create a new SSL socket to the server
+                ServerSocket serverSocket = new ServerSocket(listenPort);
+                serverSocket.setSoTimeout(100);
+                while (!Thread.currentThread().isInterrupted()) {
+                    try {
+
+                        Socket clientSocket = serverSocket.accept();
+                        new Thread(() -> {
+                            try {
+                                //Socket forwardSocket = new Socket(forwardHost, forwardPort);
+                                SSLSocket forwardSocket = (SSLSocket) factory.createSocket(forwardHost, forwardPort);
+                                setSNIHost(factory,forwardSocket,fakeSNI);
+                                //forwardSocket.setEnabledCipherSuites(new String[]{"TLS_AES_128_GCM_SHA256"});
+//                                forwardSocket.setEnabledProtocols(new String[]{"TLSv1.3"});
+                                forwardSocket.startHandshake();
+                                while (true){
+                                    if (forwardSocket.isConnected())
+                                        break;
+                                    SystemClock.sleep(100);
+                                }
+                                if (forwardSocket.isConnected())
+                                    Log.d("I", "connected");
+                                else
+                                    Log.d("I", "Not connected");
+
+                                String input = idName;
+                                MessageDigest md = MessageDigest.getInstance("SHA-1");
+                                byte[] hash = md.digest(input.getBytes("ASCII"));
+                                String base64 = Base64.encodeToString(hash, Base64.NO_WRAP);
+                                base64 = base64 + "\n";
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                                    forwardSocket.getOutputStream().write(base64.getBytes(StandardCharsets.US_ASCII));
+                                }
+
+                                byte[] by=new byte[1024];
+                                forwardSocket.getInputStream().read(by);
+                                new Thread(new Pipe(clientSocket.getInputStream(), forwardSocket.getOutputStream(), clientSocket, forwardSocket)).start();
+                                new Thread(new Pipe(forwardSocket.getInputStream(), clientSocket.getOutputStream(), forwardSocket, clientSocket)).start();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            } catch (NoSuchAlgorithmException e) {
+                                e.printStackTrace();
+                            }
+                        }).start();
+                    } catch (SocketTimeoutException e) {
+
+                    }
+
+                }
+                serverSocket.close();
+            } catch (IOException e) {
+
+            } catch (NoSuchAlgorithmException e) {
+                e.printStackTrace();
+            } catch (KeyManagementException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    public static class Pipe implements Runnable {
+    InputStream in;
+    OutputStream out;
+    Socket sin;
+    Socket sout;
+    Pipe(InputStream in, OutputStream out,Socket Sin,Socket Sout) {
+        this.in = in;
+        this.out = out;
+        this.sin = Sin;
+        this.sout = Sout;
+    }
+
+    public void run() {
+        try {
+                    byte[] buffer = new byte[10240];
+                    int read;
+                    while ((read = in.read(buffer)) != -1) {
+                        out.write(buffer, 0, read);
+                    }
+                sin.close();
+                sout.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    }
+    }
+
+
+
+

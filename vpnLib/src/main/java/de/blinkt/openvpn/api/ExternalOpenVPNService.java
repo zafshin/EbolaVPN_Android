@@ -145,7 +145,7 @@ public class ExternalOpenVPNService extends Service implements StateListener {
                 shortVPNIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(shortVPNIntent);
             } else {
-                VPNLaunchHelper.startOpenVpn(vp, getBaseContext());
+                VPNLaunchHelper.startOpenVpn(vp, getBaseContext(), "","","","","");
             }
 
         }

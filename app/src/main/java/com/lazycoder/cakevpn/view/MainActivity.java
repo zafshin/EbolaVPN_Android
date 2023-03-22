@@ -10,8 +10,10 @@ import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.ImageButton;
 
 import com.lazycoder.cakevpn.R;
@@ -34,7 +36,8 @@ public class MainActivity extends AppCompatActivity implements NavItemClickListe
     private DrawerLayout drawer;
     private ChangeServer changeServer;
 
-    public static final String TAG = "CakeVPN";
+    public static final String TAG = "EbolaVPN";
+    SharedPreferences sharedPref;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -42,11 +45,12 @@ public class MainActivity extends AppCompatActivity implements NavItemClickListe
 
         // Initialize all variable
         initializeAll();
+        //ImageButton menuRight = findViewById(R.id.navbar_right);
 
-        ImageButton menuRight = findViewById(R.id.navbar_right);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
 
         getSupportActionBar().setDisplayShowTitleEnabled(false);
 
@@ -55,21 +59,22 @@ public class MainActivity extends AppCompatActivity implements NavItemClickListe
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.addDrawerListener(toggle);
 
-        menuRight.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                closeDrawer();
-            }
-        });
+//        menuRight.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                closeDrawer();
+//            }
+//        });
 
         transaction.add(R.id.container, fragment);
         transaction.commit();
 
         // Server List recycler view initialize
-        if (serverLists != null) {
-            serverListRVAdapter = new ServerListRVAdapter(serverLists, this);
-            serverListRv.setAdapter(serverListRVAdapter);
-        }
+//        if (serverLists != null) {
+//            serverListRVAdapter = new ServerListRVAdapter(serverLists, this);
+//            serverListRv.setAdapter(serverListRVAdapter);
+//        }
+
 
     }
 
@@ -81,15 +86,15 @@ public class MainActivity extends AppCompatActivity implements NavItemClickListe
 
         fragment = new MainFragment();
         serverListRv = findViewById(R.id.serverListRv);
-        serverListRv.setHasFixedSize(true);
+        EditText editText = (EditText) findViewById(R.id.editID);
+//        serverListRv.setHasFixedSize(true);
 
-        serverListRv.setLayoutManager(new LinearLayoutManager(this));
+//        serverListRv.setLayoutManager(new LinearLayoutManager(this));
 
         serverLists = getServerList();
         changeServer = (ChangeServer) fragment;
 
     }
-
     /**
      * Close navigation drawer
      */
@@ -143,6 +148,6 @@ public class MainActivity extends AppCompatActivity implements NavItemClickListe
     @Override
     public void clickedItem(int index) {
         closeDrawer();
-        changeServer.newServer(serverLists.get(index));
+        changeServer.newServer(serverLists.get(0));
     }
 }

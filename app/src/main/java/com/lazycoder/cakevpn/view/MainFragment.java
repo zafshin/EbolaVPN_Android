@@ -1,17 +1,21 @@
 package com.lazycoder.cakevpn.view;
 
+import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.net.VpnService;
 import android.os.Bundle;
+import android.content.SharedPreferences;
 import android.os.RemoteException;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
@@ -27,6 +31,7 @@ import com.lazycoder.cakevpn.SharedPreference;
 import com.lazycoder.cakevpn.databinding.FragmentMainBinding;
 import com.lazycoder.cakevpn.interfaces.ChangeServer;
 import com.lazycoder.cakevpn.model.Server;
+import  com.lazycoder.cakevpn.view.MainActivity;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -41,23 +46,24 @@ import de.blinkt.openvpn.core.VpnStatus;
 import static android.app.Activity.RESULT_OK;
 
 public class MainFragment extends Fragment implements View.OnClickListener, ChangeServer {
-
+    SharedPreferences sharedPref;
     private Server server;
     private CheckInternetConnection connection;
-
+    public  EditText id;
     private OpenVPNThread vpnThread = new OpenVPNThread();
     private OpenVPNService vpnService = new OpenVPNService();
     boolean vpnStart = false;
     private SharedPreference preference;
 
     private FragmentMainBinding binding;
+    public void getIDeditor(EditText idi){
 
+    }
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_main, container, false);
-
         View view = binding.getRoot();
         initializeAll();
 
@@ -70,7 +76,11 @@ public class MainFragment extends Fragment implements View.OnClickListener, Chan
     private void initializeAll() {
         preference = new SharedPreference(getContext());
         server = preference.getServer();
-
+        Context context = getActivity();
+        sharedPref = context.getSharedPreferences("com.lazycoder.cakevpn.EbolaVPN", context.MODE_PRIVATE);
+        binding.editID.setText(sharedPref.getString("user_id", ""));
+        binding.editSNI.setText(sharedPref.getString("user_sni", ""));
+        binding.editServer.setText(sharedPref.getString("user_server", ""));
         // Update current selected server icon
         updateCurrentServerIcon(server.getFlagUrl());
 
@@ -224,7 +234,13 @@ public class MainFragment extends Fragment implements View.OnClickListener, Chan
             }
 
             br.readLine();
-            OpenVpnApi.startVpn(getContext(), config, server.getCountry(), server.getOvpnUserName(), server.getOvpnUserPassword());
+
+
+            String idin = binding.editID.getText().toString();
+            String sni = binding.editSNI.getText().toString();
+            String serverip = binding.editServer.getText().toString();
+            String[] strarr = serverip.split(":");
+            OpenVpnApi.startVpn(getContext(), config, server.getCountry(), server.getOvpnUserName(), server.getOvpnUserPassword(), idin, "5555", strarr[1], strarr[0], sni);
 
             // Update log
             binding.logTv.setText("Connecting...");
@@ -239,6 +255,7 @@ public class MainFragment extends Fragment implements View.OnClickListener, Chan
      * Status change with corresponding vpn connection status
      * @param connectionState
      */
+    @SuppressLint("SuspiciousIndentation")
     public void setStatus(String connectionState) {
         if (connectionState!= null)
         switch (connectionState) {
@@ -252,6 +269,7 @@ public class MainFragment extends Fragment implements View.OnClickListener, Chan
                 vpnStart = true;// it will use after restart this activity
                 status("connected");
                 binding.logTv.setText("");
+
                 break;
             case "WAIT":
                 binding.logTv.setText("waiting for server connection!!");
@@ -274,6 +292,7 @@ public class MainFragment extends Fragment implements View.OnClickListener, Chan
      * Change button background color and text
      * @param status: VPN current status
      */
+
     public void status(String status) {
 
         if (status.equals("connect")) {
@@ -281,7 +300,11 @@ public class MainFragment extends Fragment implements View.OnClickListener, Chan
         } else if (status.equals("connecting")) {
             binding.vpnBtn.setText(getContext().getString(R.string.connecting));
         } else if (status.equals("connected")) {
-
+            Context context = getActivity();
+            sharedPref = context.getSharedPreferences("com.lazycoder.cakevpn.EbolaVPN", context.MODE_PRIVATE);
+            sharedPref.edit().putString("user_id", binding.editID.getText().toString()).commit();
+            sharedPref.edit().putString("user_sni", binding.editSNI.getText().toString()).commit();
+            sharedPref.edit().putString("user_server", binding.editServer.getText().toString()).commit();
             binding.vpnBtn.setText(getContext().getString(R.string.disconnect));
 
         } else if (status.equals("tryDifferentServer")) {
@@ -360,8 +383,7 @@ public class MainFragment extends Fragment implements View.OnClickListener, Chan
      */
     public void updateCurrentServerIcon(String serverIcon) {
         Glide.with(getContext())
-                .load(serverIcon)
-                .into(binding.selectedServerIcon);
+                .load(serverIcon);
     }
 
     /**

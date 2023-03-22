@@ -8,6 +8,7 @@
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
     android:orientation="vertical"
+
     tools:context=".view.MainActivity"
     tools:openDrawer="start">
 
@@ -16,15 +17,15 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <com.google.android.material.navigation.NavigationView
-        android:id="@+id/nav_view_right"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:layout_gravity="end"
-        android:fitsSystemWindows="true">
+<!--    <com.google.android.material.internal.BaselineLayout-->
+<!--        android:id="@+id/nav_view_right"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="match_parent"-->
+<!--        android:layout_gravity="end"-->
+<!--        android:fitsSystemWindows="true">-->
 
-        <include layout="@layout/layout_right_navigation" />
+<!--&lt;!&ndash;        <include layout="@layout/layout_right_navigation" />&ndash;&gt;-->
 
-    </com.google.android.material.navigation.NavigationView>
+<!--    </com.google.android.material.internal.BaselineLayout>-->
 
 </androidx.drawerlayout.widget.DrawerLayout>

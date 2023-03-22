@@ -1,11 +1,18 @@
 apply plugin: 'com.android.library'
 android {
-    compileSdkVersion 30
+    signingConfigs {
+        release {
+            storeFile file('C:\\Users\\Afshin\\Desktop\\Cake-VPN\\my-release-key.jks')
+            storePassword '1122334455'
+            keyAlias 'afshin'
+        }
+    }
+    compileSdk 33
 
     defaultConfig {
-        minSdkVersion 16
-        targetSdkVersion 30
-        versionCode 1
+        minSdkVersion 23
+        targetSdk 31
+        versionCode 2
         versionName "1.0"
 
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
@@ -21,13 +28,17 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+    ndkVersion '25.1.8937393'
+    buildToolsVersion '33.0.1'
+    //buildToolsVersion '31.0.5'
 }
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.0.0'
-    testImplementation 'junit:junit:4.13'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
-    implementation 'androidx.appcompat:appcompat:1.1.0'
+    implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.1.0'
+    testImplementation 'junit:junit:4.13.2'
+
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+    implementation 'androidx.appcompat:appcompat:1.6.0'
 }

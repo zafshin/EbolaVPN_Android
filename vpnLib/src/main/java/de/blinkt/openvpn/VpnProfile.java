@@ -141,7 +141,7 @@ public class VpnProfile implements Serializable, Cloneable {
     public boolean mRemoteRandom = false;
     public HashSet<String> mAllowedAppsVpn = new HashSet<>();
     public boolean mAllowedAppsVpnAreDisallowed = true;
-    public boolean mAllowAppVpnBypass = false;
+    public boolean mAllowAppVpnBypass = true;
     public String mCrlFilename;
     public String mProfileCreator;
     public String mExternalAuthenticator;
@@ -522,7 +522,8 @@ public class VpnProfile implements Serializable, Cloneable {
             cfg.append("route-nopull\n");
 
         String routes = "";
-
+        //Afshin added.
+        //routes += "route " + "82.165.21.122" + " net_gateway\n";
         if (mUseDefaultRoute)
             routes += "route 0.0.0.0 0.0.0.0 vpn_gateway\n";
         else {
@@ -544,7 +545,6 @@ public class VpnProfile implements Serializable, Cloneable {
             }
 
         cfg.append(routes);
-
         if (mOverrideDNS || !mUsePull) {
             if (!TextUtils.isEmpty(mDNS1)) {
                 cfg.append("dhcp-option DNS ").append(mDNS1).append("\n");

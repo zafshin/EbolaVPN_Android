@@ -39,7 +39,6 @@ public class ServerListRVAdapter extends RecyclerView.Adapter<ServerListRVAdapte
 
     @Override
     public void onBindViewHolder(@NonNull MyViewHolder holder, int position) {
-
         holder.serverCountry.setText(serverLists.get(position).getCountry());
         Glide.with(mContext)
                 .load(serverLists.get(position).getFlagUrl())
