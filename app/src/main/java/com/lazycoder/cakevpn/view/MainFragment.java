@@ -11,11 +11,16 @@ import android.net.VpnService;
 import android.os.Bundle;
 import android.content.SharedPreferences;
 import android.os.RemoteException;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import android.view.ViewGroup;
 
+import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
+import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
@@ -79,7 +84,6 @@ public class MainFragment extends Fragment implements View.OnClickListener, Chan
         Context context = getActivity();
         sharedPref = context.getSharedPreferences("com.lazycoder.cakevpn.EbolaVPN", context.MODE_PRIVATE);
         binding.editID.setText(sharedPref.getString("user_id", ""));
-        binding.editSNI.setText(sharedPref.getString("user_sni", ""));
         binding.editServer.setText(sharedPref.getString("user_server", ""));
         // Update current selected server icon
         updateCurrentServerIcon(server.getFlagUrl());
@@ -221,6 +225,7 @@ public class MainFragment extends Fragment implements View.OnClickListener, Chan
     private void startVpn() {
         try {
             // .ovpn file
+
             InputStream conf = getActivity().getAssets().open(server.getOvpn());
             InputStreamReader isr = new InputStreamReader(conf);
             BufferedReader br = new BufferedReader(isr);
@@ -233,18 +238,32 @@ public class MainFragment extends Fragment implements View.OnClickListener, Chan
                 config += line + "\n";
             }
 
+
             br.readLine();
 
 
             String idin = binding.editID.getText().toString();
-            String sni = binding.editSNI.getText().toString();
             String serverip = binding.editServer.getText().toString();
             String[] strarr = serverip.split(":");
-            OpenVpnApi.startVpn(getContext(), config, server.getCountry(), server.getOvpnUserName(), server.getOvpnUserPassword(), idin, "5555", strarr[1], strarr[0], sni);
+            Log.d("I", "startVpn: "+ serverip);
+            if (strarr.length == 2){
+
+            try {
+                InetAddress[] addresses = InetAddress.getAllByName(strarr[0]);
+                for (InetAddress address : addresses) {
+                    String ipAddress = address.getHostAddress();
+                    config += "route "+ ipAddress +" 255.255.255.255 net_gateway\n";
+                    Log.d("I", "startVpn: "+ ipAddress);
+                }
+            } catch (UnknownHostException e) {
+
+            }
+            OpenVpnApi.startVpn(getContext(), config, server.getCountry(), server.getOvpnUserName(), server.getOvpnUserPassword(), idin, "12000", strarr[1], strarr[0], "");
 
             // Update log
             binding.logTv.setText("Connecting...");
             vpnStart = true;
+            }
 
         } catch (IOException | RemoteException e) {
             e.printStackTrace();
@@ -303,7 +322,6 @@ public class MainFragment extends Fragment implements View.OnClickListener, Chan
             Context context = getActivity();
             sharedPref = context.getSharedPreferences("com.lazycoder.cakevpn.EbolaVPN", context.MODE_PRIVATE);
             sharedPref.edit().putString("user_id", binding.editID.getText().toString()).commit();
-            sharedPref.edit().putString("user_sni", binding.editSNI.getText().toString()).commit();
             sharedPref.edit().putString("user_server", binding.editServer.getText().toString()).commit();
             binding.vpnBtn.setText(getContext().getString(R.string.disconnect));
 

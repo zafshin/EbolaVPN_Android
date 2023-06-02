@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layout xmlns:tools="http://schemas.android.com/tools"
+    android:focusableInTouchMode="true"
     xmlns:android="http://schemas.android.com/apk/res/android">
+
 
     <RelativeLayout
         android:layout_width="match_parent"
@@ -99,23 +101,6 @@
                 android:textColorLink="#2BD66F"
                 android:typeface="sans"
                 tools:ignore="Deprecated" />
-
-            <EditText
-                android:id="@+id/editSNI"
-                style="@android:style/Widget.Material.EditText"
-                android:layout_width="match_parent"
-                android:layout_height="60dp"
-                android:editable="true"
-                android:ems="10"
-                android:hapticFeedbackEnabled="true"
-                android:hint="SNI"
-                android:imeOptions="normal"
-                android:inputType="textUri|textPersonName"
-                android:singleLine="true"
-                android:textAlignment="center"
-                android:textColor="@color/colorWhite"
-                android:textColorHighlight="#000000"
-                android:textColorHint="@android:color/darker_gray" />
 
             <EditText
                 android:id="@+id/editServer"

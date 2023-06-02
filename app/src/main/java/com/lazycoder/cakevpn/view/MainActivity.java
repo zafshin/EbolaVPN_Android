@@ -10,11 +10,15 @@ import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.content.Context;
+import android.os.StrictMode;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.RelativeLayout;
 
 import com.lazycoder.cakevpn.R;
 import com.lazycoder.cakevpn.adapter.ServerListRVAdapter;
@@ -42,7 +46,10 @@ public class MainActivity extends AppCompatActivity implements NavItemClickListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder()
+                .permitAll()
+                .build();
+        StrictMode.setThreadPolicy(policy);
         // Initialize all variable
         initializeAll();
         //ImageButton menuRight = findViewById(R.id.navbar_right);
@@ -87,6 +94,8 @@ public class MainActivity extends AppCompatActivity implements NavItemClickListe
         fragment = new MainFragment();
         serverListRv = findViewById(R.id.serverListRv);
         EditText editText = (EditText) findViewById(R.id.editID);
+
+
 //        serverListRv.setHasFixedSize(true);
 
 //        serverListRv.setLayoutManager(new LinearLayoutManager(this));
