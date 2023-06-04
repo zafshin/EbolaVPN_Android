@@ -257,7 +257,7 @@ public class VPNLaunchHelper {
             xray.destroy();
         try {
             String executablePath = context.getApplicationInfo().nativeLibraryDir + "/libgost.so";
-            String[] command = {executablePath, "-L", "auto://:11000?log?level=error", "-F", "ss+ohttp://AEAD_CHACHA20_POLY1305:nvPIHGFWFASDe@"+host+":"+port+"?resolver=8.8.8.8,tls://8.8.8.8:853,https://1.0.0.1/dns-query&log?level=error"};
+            String[] command = {executablePath, "-L", "auto://:11000?log?level=error", "-F", "ss+ohttp://AEAD_CHACHA20_POLY1305:nvPIHGFWFASDe@"+host+":"+port+"?resolver=8.8.8.8,1.1.1.1,1.0.0.1&log?level=error"};
             //String[] command = {"cat", context.getFilesDir()+ "/config.json"};
 
             ProcessBuilder processBuilder = new ProcessBuilder(command);
@@ -311,7 +311,7 @@ public class VPNLaunchHelper {
         try {
             Proxy proxy = new Proxy(Proxy.Type.SOCKS, new InetSocketAddress("127.0.0.1", 11000));
             Socket socket = new Socket(proxy);
-            socket.connect(new InetSocketAddress("www.google.com", 80), 1000);
+            socket.connect(new InetSocketAddress("www.google.com", 80), 500);
             socket.close();
             return true;
         } catch (IOException e) {
@@ -337,8 +337,14 @@ public class VPNLaunchHelper {
                 }catch (InterruptedException e){}
             }
 
-        //SSHPortForward pf = new SSHPortForward();
-        //pf.stop();
+        long startTime = System.currentTimeMillis();
+        long endTime = startTime + 6000; // 6 seconds
+        while (System.currentTimeMillis() < endTime) {
+            SystemClock.sleep(300);
+            if (checkSocks())
+                break;
+        }
+
         portforwardessl = new sslForwarder();
         portforwardessl.idName = id;
         portforwardessl.fakeSNI = fakeSNI;
@@ -347,17 +353,8 @@ public class VPNLaunchHelper {
         portforwardessl.host = host;
 //        Log.d("I", "Not connected");
         ThreadSSL = new Thread(portforwardessl);
-        //threadpf.setName("test");
         ThreadSSL.start();
-       // pfThread = new Thread(pf);
-       // pfThread.start();
-        long startTime = System.currentTimeMillis();
-        long endTime = startTime + 6000; // 6 seconds
-        while (System.currentTimeMillis() < endTime) {
-            SystemClock.sleep(100);
-            if (checkSocks())
-                break;
-        }
+
         Intent startVPN = startprofile.prepareStartService(context);
         if (startVPN != null) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
@@ -447,7 +444,7 @@ public class VPNLaunchHelper {
 //                    // Connection failed
 //                    Log.d("W", "test failed.");
 //                }
-               serverSocket.setSoTimeout(100);
+               serverSocket.setSoTimeout(10);
                 while (!Thread.currentThread().isInterrupted()) {
                     try {
                         Socket clientSocket = serverSocket.accept();
@@ -466,7 +463,7 @@ public class VPNLaunchHelper {
                                 while (true){
                                     if (forwardSocket.isConnected())
                                         break;
-                                    SystemClock.sleep(100);
+                                    SystemClock.sleep(10);
                                 }
                                 if (forwardSocket.isConnected())
                                     Log.d("I", "connected");

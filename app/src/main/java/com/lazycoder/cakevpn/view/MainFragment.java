@@ -110,10 +110,18 @@ public class MainFragment extends Fragment implements View.OnClickListener, Chan
         switch (v.getId()) {
             case R.id.vpnBtn:
                 // Vpn is running, user would like to disconnect current connection.
+                String idin = binding.editID.getText().toString();
+                String serverip = binding.editServer.getText().toString();
+                String[] strarr = serverip.split(":");
+                if((strarr.length == 2) & (idin.length() >0))
                 if (vpnStart) {
+
                     confirmDisconnect();
                 }else {
                     prepareVpn();
+                }
+                else{
+                    showToast("ID or server address is incorrect");
                 }
         }
     }

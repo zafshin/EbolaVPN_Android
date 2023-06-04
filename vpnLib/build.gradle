@@ -5,6 +5,9 @@ android {
             storeFile file('C:\\Users\\Afshin\\Desktop\\Cake-VPN\\my-release-key.jks')
             storePassword '1122334455'
             keyAlias 'afshin'
+            packagingOptions {
+                exclude '**/*.so'
+            }
         }
     }
     compileSdk 33
