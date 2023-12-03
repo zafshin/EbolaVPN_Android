@@ -15,6 +15,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import android.view.ViewGroup;
 
@@ -248,8 +250,6 @@ public class MainFragment extends Fragment implements View.OnClickListener, Chan
 
 
             br.readLine();
-
-
             String idin = binding.editID.getText().toString();
             String serverip = binding.editServer.getText().toString();
             String[] strarr = serverip.split(":");
@@ -257,11 +257,15 @@ public class MainFragment extends Fragment implements View.OnClickListener, Chan
             if (strarr.length == 2){
 
             try {
+                SocketAddress socketAddress = new InetSocketAddress("8.8.8.8", 53);
+                // Set the system DNS resolver to the specified DNS resolver
+                System.setProperty("dns.server", socketAddress.toString());
                 InetAddress[] addresses = InetAddress.getAllByName(strarr[0]);
+
                 for (InetAddress address : addresses) {
                     String ipAddress = address.getHostAddress();
                     config += "route "+ ipAddress +" 255.255.255.255 net_gateway\n";
-                    Log.d("I", "startVpn: "+ ipAddress);
+                    Log.d("I", "Routed: "+ ipAddress);
                 }
             } catch (UnknownHostException e) {
 

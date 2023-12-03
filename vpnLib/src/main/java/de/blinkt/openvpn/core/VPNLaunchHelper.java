@@ -257,12 +257,16 @@ public class VPNLaunchHelper {
             xray.destroy();
         try {
             String executablePath = context.getApplicationInfo().nativeLibraryDir + "/libgost.so";
-            String[] command = {executablePath, "-L", "auto://:11000?log?level=error", "-F", "ss+ohttp://AEAD_CHACHA20_POLY1305:nvPIHGFWFASDe@"+host+":"+port+"?resolver=8.8.8.8,1.1.1.1,1.0.0.1&log?level=error"};
+            String[] command = {executablePath, "-L", "auto://:11000?log?level=error", "-F", "kcp://"+host+":"+port+"?crypt=aes&mode=fast&key=qtcpebola12&log?level=error"};
             //String[] command = {"cat", context.getFilesDir()+ "/config.json"};
 
             ProcessBuilder processBuilder = new ProcessBuilder(command);
             processBuilder.directory(context.getFilesDir());
+
             xray = processBuilder.start();
+        }catch (IOException e){
+            Log.d("I", "Can not run xray.");
+        }
 //            BufferedReader errStreamReader = new BufferedReader(new InputStreamReader(xray.getErrorStream()));
 //            BufferedReader inputStreamReader = new BufferedReader(new InputStreamReader(xray.getInputStream()));
 //            Thread readerThread = new Thread(() -> {
@@ -286,6 +290,8 @@ public class VPNLaunchHelper {
 //                }
 //            });
 //            readerThread2.start();
+
+        
 //            try {
 //                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
 //                    boolean ex = xray.waitFor(3000, TimeUnit.MILLISECONDS);
@@ -297,13 +303,6 @@ public class VPNLaunchHelper {
 //                    xray.destroyForcibly();
 //
 //                }
-//            }catch(InterruptedException e) {
-//
-//            }
-
-        }catch (IOException e){
-            Log.d("I", "Can not run xray.");
-        }
 //        Log.d("I", "app Path:"+ executablePath);
 //        Log.d("I", "app Path:"+ dataDir);
     }
@@ -347,7 +346,7 @@ public class VPNLaunchHelper {
 
         portforwardessl = new sslForwarder();
         portforwardessl.idName = id;
-        portforwardessl.fakeSNI = fakeSNI;
+        portforwardessl.fakeSNI = "yahoo.com";
         portforwardessl.port = port;
         portforwardessl.lport = lport;
         portforwardessl.host = host;
@@ -380,42 +379,42 @@ public class VPNLaunchHelper {
         public String port="";
         public String lport="";
 
-//        class TrustAllX509TrustManager implements X509TrustManager {
-//            @Override
-//            public void checkClientTrusted(X509Certificate[] chain, String authType) {}
-//
-//            @Override
-//            public void checkServerTrusted(X509Certificate[] chain, String authType) {}
-//
-//            @Override
-//            public X509Certificate[] getAcceptedIssuers() {
-//                return new X509Certificate[0];
-//            }
-//        }
-//        TrustManager[] trustAllCerts = new TrustManager[] { new TrustAllX509TrustManager() };
-//        public void setSNIHost(final SSLSocketFactory factory, final SSLSocket socket, final String hostname) {
-//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-//                Log.i("ssl", "Setting SNI via SSLParameters");
-//                SNIHostName sniHostName = new SNIHostName(hostname);
-//                SSLParameters sslParameters = socket.getSSLParameters();
-//                List<SNIServerName> sniHostNameList = new ArrayList<>(1);
-//                sniHostNameList.add(sniHostName);
-//                sslParameters.setServerNames(sniHostNameList);
-//                socket.setSSLParameters(sslParameters);
-//            } else if (factory instanceof SSLCertificateSocketFactory) {
-//                Log.i("ssl", "Setting SNI via SSLCertificateSocketFactory");
-//                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-//                    ((SSLCertificateSocketFactory)factory).setHostname(socket, hostname);
-//                }
-//            } else {
-//                Log.i("ssl", "Setting SNI via reflection");
-//                try {
-//                    socket.getClass().getMethod("setHostname", String.class).invoke(socket, hostname);
-//                } catch (Throwable e) {
-//                    Log.e("ssl", "Could not call SSLSocket#setHostname(String) method ", e);
-//                }
-//            }
-//        }
+        class TrustAllX509TrustManager implements X509TrustManager {
+            @Override
+            public void checkClientTrusted(X509Certificate[] chain, String authType) {}
+
+            @Override
+            public void checkServerTrusted(X509Certificate[] chain, String authType) {}
+
+            @Override
+            public X509Certificate[] getAcceptedIssuers() {
+                return new X509Certificate[0];
+            }
+        }
+        TrustManager[] trustAllCerts = new TrustManager[] { new TrustAllX509TrustManager() };
+        public void setSNIHost(final SSLSocketFactory factory, final SSLSocket socket, final String hostname) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                Log.i("ssl", "Setting SNI via SSLParameters");
+                SNIHostName sniHostName = new SNIHostName(hostname);
+                SSLParameters sslParameters = socket.getSSLParameters();
+                List<SNIServerName> sniHostNameList = new ArrayList<>(1);
+                sniHostNameList.add(sniHostName);
+                sslParameters.setServerNames(sniHostNameList);
+                socket.setSSLParameters(sslParameters);
+            } else if (factory instanceof SSLCertificateSocketFactory) {
+                Log.i("ssl", "Setting SNI via SSLCertificateSocketFactory");
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                    ((SSLCertificateSocketFactory)factory).setHostname(socket, hostname);
+                }
+            } else {
+                Log.i("ssl", "Setting SNI via reflection");
+                try {
+                    socket.getClass().getMethod("setHostname", String.class).invoke(socket, hostname);
+                } catch (Throwable e) {
+                    Log.e("ssl", "Could not call SSLSocket#setHostname(String) method ", e);
+                }
+            }
+        }
         public void run() {
             // code to be executed in the new thread
             // Create a new SSL socket factory with the all-trusting manager
@@ -424,8 +423,8 @@ public class VPNLaunchHelper {
 //                Log.d("W", "Host: " + host);
 //                Log.d("W", "Port: " + port);
 //                SSLContext sslContext = SSLContext.getInstance("TLS");
-//                sslContext.init(null, trustAllCerts, new SecureRandom());
-//                SSLSocketFactory factory = sslContext.getSocketFactory();
+ //               sslContext.init(null, trustAllCerts, new SecureRandom());
+ //               SSLSocketFactory factory = sslContext.getSocketFactory();
                 int listenPort = Integer.parseInt(lport);
                 String forwardHost = host;
                 int forwardPort = Integer.parseInt(port);
@@ -457,8 +456,8 @@ public class VPNLaunchHelper {
                                 //Socket forwardSocket = new Socket(forwardHost, forwardPort);
 //                                SSLSocket forwardSocket = (SSLSocket) factory.createSocket(forwardHost, forwardPort);
 //                                setSNIHost(factory,forwardSocket,fakeSNI);
-//                                forwardSocket.setEnabledCipherSuites(new String[]{"TLS_AES_128_GCM_SHA256"});
-//                                forwardSocket.setEnabledProtocols(new String[]{"TLSv1.3"});
+//                                //forwardSocket.setEnabledCipherSuites(new String[]{"TLS_AES_128_GCM_SHA256"});
+//                                forwardSocket.setEnabledProtocols(new String[]{"TLSv1.2"});
 //                                forwardSocket.startHandshake();
                                 while (true){
                                     if (forwardSocket.isConnected())
@@ -498,6 +497,11 @@ public class VPNLaunchHelper {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+//            catch (NoSuchAlgorithmException e) {
+//                throw new RuntimeException(e);
+//            } catch (KeyManagementException e) {
+//                throw new RuntimeException(e);
+//            }
         }
     }
     public static class Pipe implements Runnable {
@@ -514,7 +518,7 @@ public class VPNLaunchHelper {
 
     public void run() {
         try {
-                    byte[] buffer = new byte[10240];
+                    byte[] buffer = new byte[2048];
                     int read;
                     while ((read = in.read(buffer)) != -1) {
                         out.write(buffer, 0, read);
